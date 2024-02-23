@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,16 +13,16 @@ final responseControllerStateProvider = StateProvider.autoDispose((ref) {
 });
 
 final imagePickerProvider =
-    StateNotifierProvider<ImagePickerNotifier, List<File>>((ref) {
+    StateNotifierProvider<ImagePickerNotifier, List<Uint8List>>((ref) {
   return ImagePickerNotifier();
 });
 
-class ImagePickerNotifier extends StateNotifier<List<File>> {
+class ImagePickerNotifier extends StateNotifier<List<Uint8List>> {
   ImagePickerNotifier() : super([]);
 
   Future<void> pickImage() async {
     final picker = ImagePicker();
-    final pickedFiles = await picker.pickMultiImage();
-    state = pickedFiles.map((e) => File(e.path)).toList();
+    final pickedFiles = await picker.pickMultiImage(imageQuality: 50);
+    state = await Future.wait(pickedFiles.map((e) => e.readAsBytes()));
   }
 }

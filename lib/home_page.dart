@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,19 +29,19 @@ class MyHomePage extends ConsumerWidget {
 }
 
 class ImageTile extends StatelessWidget {
-  final File imageFile;
+  final Uint8List imageBytes;
 
   const ImageTile({
     super.key,
-    required this.imageFile,
+    required this.imageBytes,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.all(20),
-      child: Image.file(
-        imageFile,
+      child: Image.memory(
+        imageBytes,
         fit: BoxFit.cover,
       ),
     );
@@ -50,11 +51,11 @@ class ImageTile extends StatelessWidget {
 class ImageDisplayWidget extends ConsumerWidget {
   const ImageDisplayWidget({super.key});
 
-  Widget buildImageList(List<File> images) {
+  Widget buildImageList(List<Uint8List> images) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: images.isNotEmpty
-          ? images.map((e) => ImageTile(imageFile: e)).toList()
+          ? images.map((e) => ImageTile(imageBytes: e)).toList()
           : [const Icon(Icons.image, size: 100)],
     );
   }
@@ -89,7 +90,7 @@ class TextFieldInputWidget extends ConsumerWidget {
     ref.read(responseControllerStateProvider).text = "Loading...";
     await getGeminiResponse(
       ref.read(messageControllerStateProvider).text,
-      ref.read(imagePickerProvider).map((e) => e.readAsBytesSync()).toList(),
+      ref.read(imagePickerProvider)
     ).then((response) =>
         ref.read(responseControllerStateProvider).text = response);
   }

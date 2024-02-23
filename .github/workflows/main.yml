@@ -1,4 +1,4 @@
-name: deploy
+name: deploy github pages
 
 on:
   push:
@@ -6,29 +6,33 @@ on:
 
 jobs:
   build:
-    name: Flutter build and deploy
     runs-on: ubuntu-latest
-
+    timeout-minutes: 30
     steps:
-    - uses: actions/checkout@master
-    - name: Say start a build
-      run: echo flutter build web
-    - uses: subosito/flutter-action@v1
-      with:
-        flutter-version: '3.19.1'
-        channel: 'stable'
-    - run: flutter --version
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: save secrets api key
-      run: echo GOOGLE_AI_STUDIO_API_KEY=${{ secrets.GOOGLE_AI_STUDIO_API_KEY }} > .env
+      - name: save secrets api key
+        run: echo GOOGLE_AI_STUDIO_API_KEY=${{ secrets.GOOGLE_AI_STUDIO_API_KEY }} > .env
 
-    - name: Run a flutter build and deploy
-      run: |
-        flutter pub get
-        flutter build web --base-href /${{ steps.version.outputs.repository }}
+      - name: Repository
+        id: version
+        run: |
+          REPOSITORY=$(echo ${{ github.repository }} | sed -e "s#.*/##")
+          echo ::set-output name=repository::$REPOSITORY
+      - name: Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.1'
+          channel: 'stable'
+          cache: false
+      - run: flutter --version
+      - run: flutter pub get
+      - run: flutter build web --web-renderer html --base-href /${{ steps.version.outputs.repository }}/
 
-    - name: Deploy
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./build/web
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web

@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -44,15 +44,10 @@ final imagePickerProvider =
 class ImagePickerNotifier extends StateNotifier<List<File>> {
   ImagePickerNotifier() : super([]);
 
-  Future pickImage() async {
+  Future<void> pickImage() async {
     final picker = ImagePicker();
-    // final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     final pickedFiles = await picker.pickMultiImage();
-
     state = pickedFiles.map((e) => File(e.path)).toList();
-    // if (pickedFile != null) {
-    //   state = File(pickedFile.path);
-    // }
   }
 }
 

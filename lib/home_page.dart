@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -13,7 +12,7 @@ class MyHomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Instagram caption generator'),
+        title: const Text('Instagramキャプションジェネレーター'),
       ),
       body: const SingleChildScrollView(
         child: Column(
@@ -87,7 +86,7 @@ class TextFieldInputWidget extends ConsumerWidget {
   const TextFieldInputWidget({super.key});
 
   Future<void> handleCaptionGeneration(WidgetRef ref) async {
-    ref.read(responseControllerStateProvider).text = "Loading...";
+    ref.read(responseControllerStateProvider).text = "生成中...";
     await getGeminiResponse(
       ref.read(messageControllerStateProvider).text,
       ref.read(imagePickerProvider)
@@ -107,7 +106,7 @@ class TextFieldInputWidget extends ConsumerWidget {
         TextField(
           decoration: const InputDecoration(
             border: OutlineInputBorder(),
-            labelText: 'message',
+            labelText: '追加情報を入力する',
           ),
           controller: ref.watch(messageControllerStateProvider),
         ),
@@ -119,7 +118,7 @@ class TextFieldInputWidget extends ConsumerWidget {
           maxLines: null,
           decoration: const InputDecoration(
             border: OutlineInputBorder(),
-            labelText: 'response',
+            labelText: '生成されたキャプション',
           ),
           controller: ref.watch(responseControllerStateProvider),
         ),

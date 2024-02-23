@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -9,44 +11,71 @@ class MyHomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('Flutter Demo'),
+      appBar: AppBar(
+        title: const Text('Instagram caption generator'),
+      ),
+      body: const SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            ImageDisplayWidget(),
+            TextFieldInputWidget(),
+          ],
         ),
-        body: const SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              ImageDisplayWidget(),
-              TextFieldInputWidget(),
-            ],
-          ),
-        ));
+      ),
+    );
+  }
+}
+
+class ImageTile extends StatelessWidget {
+  final File imageFile;
+
+  const ImageTile({
+    super.key,
+    required this.imageFile,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(20),
+      child: Image.file(
+        imageFile,
+        fit: BoxFit.cover,
+      ),
+    );
   }
 }
 
 class ImageDisplayWidget extends ConsumerWidget {
   const ImageDisplayWidget({super.key});
 
+  Widget buildImageList(List<File> images) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: images.isNotEmpty
+          ? images.map((e) => ImageTile(imageFile: e)).toList()
+          : [const Icon(Icons.image, size: 100)],
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final images = ref.watch(imagePickerProvider);
+    final scrollController = ScrollController();
 
     return Container(
-      margin: const EdgeInsets.all(20),
+      margin: const EdgeInsets.fromLTRB(50, 0, 50, 0),
       child: SizedBox(
         height: 300,
-        child: Row(
-          children: images.isNotEmpty
-              ? images
-                  .map((e) => Container(
-                        margin: const EdgeInsets.all(20),
-                        child: Image.file(
-                          e,
-                          fit: BoxFit.cover,
-                        ),
-                      ))
-                  .toList()
-              : [const Icon(Icons.image, size: 100)],
+        child: Scrollbar(
+          thumbVisibility: true,
+          controller: scrollController,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            controller: scrollController,
+            child: buildImageList(images),
+          ),
         ),
       ),
     );
@@ -56,46 +85,44 @@ class ImageDisplayWidget extends ConsumerWidget {
 class TextFieldInputWidget extends ConsumerWidget {
   const TextFieldInputWidget({super.key});
 
+  Future<void> handleCaptionGeneration(WidgetRef ref) async {
+    ref.read(responseControllerStateProvider).text = "Loading...";
+    await getGeminiResponse(
+      ref.read(messageControllerStateProvider).text,
+      ref.read(imagePickerProvider).map((e) => e.readAsBytesSync()).toList(),
+    ).then((response) =>
+        ref.read(responseControllerStateProvider).text = response);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Column(children: [
-      Container(
-          margin: const EdgeInsets.all(20),
-          child: TextButton(
-            onPressed: () => ref.read(imagePickerProvider.notifier).pickImage(),
-            child: const Text('Pick Image'),
-          )),
-      TextField(
-        decoration: const InputDecoration(
-          border: OutlineInputBorder(),
-          labelText: 'message',
+    return Container(
+      margin: const EdgeInsets.all(50),
+      child: Column(children: [
+        TextButton(
+          onPressed: () => ref.read(imagePickerProvider.notifier).pickImage(),
+          child: const Text('画像を選択する'),
         ),
-        controller: ref.watch(messageControllerStateProvider),
-      ),
-      Container(
-          margin: const EdgeInsets.all(20),
-          child: TextButton(
-              onPressed: () => {
-                    getGeminiResponse(
-                      ref.read(messageControllerStateProvider).text,
-                      ref
-                          .read(imagePickerProvider)
-                          .map((e) => e.readAsBytesSync())
-                          .toList(),
-                    ).then((value) {
-                      ref.read(responseControllerStateProvider).text = value;
-                    })
-                  },
-              child: const Text('Update Text'))),
-      TextField(
-        keyboardType: TextInputType.multiline,
-        maxLines: null,
-        decoration: const InputDecoration(
-          border: OutlineInputBorder(),
-          labelText: 'response',
+        TextField(
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            labelText: 'message',
+          ),
+          controller: ref.watch(messageControllerStateProvider),
         ),
-        controller: ref.watch(responseControllerStateProvider),
-      )
-    ]);
+        TextButton(
+            onPressed: () => handleCaptionGeneration(ref),
+            child: const Text('キャプションを生成する')),
+        TextField(
+          keyboardType: TextInputType.multiline,
+          maxLines: null,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            labelText: 'response',
+          ),
+          controller: ref.watch(responseControllerStateProvider),
+        ),
+      ]),
+    );
   }
 }
